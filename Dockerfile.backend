@@ -1,0 +1,35 @@
+# Dockerfile.backend
+# Use a Python 3.9 slim base image, which is good for smaller image sizes
+FROM python:3.9-slim-buster
+
+# Install system dependencies required for FFmpeg (used by MoviePy)
+# and for gTTS/font rendering.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg \
+    libgfortran5 \
+    # Optional: If arial.ttf or similar isn't found, you might need common fonts:
+    # fonts-liberation \
+    # fonts-dejavu \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy only the requirements file first to leverage Docker's build cache
+# If requirements.txt doesn't change, this step (and pip install) will be cached
+COPY backend/requirements.txt .
+
+# Install Python dependencies
+# --no-cache-dir ensures that pip doesn't store cache, reducing image size
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the entire backend application code into the container
+# This is for the build stage; for development, the docker-compose volume mount will override this.
+COPY backend/ .
+
+# Expose the port on which FastAPI will listen
+EXPOSE 8000
+
+# Default command to run the FastAPI application using Uvicorn
+# The actual command can be overridden by docker-compose.yml
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

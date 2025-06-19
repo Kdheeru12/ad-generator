@@ -1,0 +1,23 @@
+# Dockerfile.frontend
+# Use a Node.js 18 Alpine image, which is smaller and suitable for development
+FROM node:18-alpine
+
+# Set the working directory inside the container for the frontend application
+WORKDIR /app/frontend
+
+# Copy package.json and package-lock.json (or yarn.lock) first to leverage Docker's build cache
+COPY frontend/package*.json ./
+
+# Install frontend dependencies
+RUN npm install
+
+# Copy the rest of the frontend application code
+# For development, this copy will be mostly overridden by the volume mount in docker-compose.yml
+COPY frontend/ .
+
+# Expose the default port for the React development server
+EXPOSE 3000
+
+# Default command to start the React development server
+# The actual command can be overridden by docker-compose.yml
+CMD ["npm", "start"]

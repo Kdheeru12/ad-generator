@@ -1,0 +1,69 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  # Frontend Service (React)
+  frontend:
+    build:
+      context: . # Build context is the project root (where docker-compose.yml is)
+      dockerfile: Dockerfile.frontend # Use the specific Dockerfile for frontend
+    ports:
+      - "3000:3000" # Map host port 3000 to container port 3000 (React dev server default)
+    volumes:
+      # Mount the frontend source code for hot-reloading during development
+      - ./frontend:/app/frontend
+      # Anonymous volume to prevent host's node_modules clashing with container's
+      - /app/frontend/node_modules
+    working_dir: /app/frontend # Set the working directory inside the container
+    depends_on:
+      - backend # Frontend service depends on the backend
+    networks:
+      - app-network # Connect to our custom network
+    environment:
+      # REACT_APP_BACKEND_URL: Tells the React app where to find the backend API
+      # 'backend' is the service name within the Docker network
+      # For browser access, it maps to localhost:8000 on the host
+      REACT_APP_BACKEND_URL: http://0.0.0.0:8000
+      # Required for Create React App hot-reloading to work reliably in Docker
+      CHOKIDAR_USEPOLLING: "true"
+    # Command to start the React development server
+    command: npm start
+
+  # Backend Service (FastAPI)
+  backend:
+    build:
+      context: . # Build context is the project root
+      dockerfile: Dockerfile.backend # Use the specific Dockerfile for backend
+    ports:
+      - "8000:8000" # Map host port 8000 to container port 8000 (FastAPI default)
+    volumes:
+      # Mount the backend source code for hot-reloading and access to files
+      - ./backend:/app
+      # Named volume for persistent storage of generated videos and the SQLite DB
+      # This maps /app/temp_videos in the container to a Docker volume named 'generated_videos'
+      # Docker will manage where 'generated_videos' lives on your host (usually /var/lib/docker/volumes)
+      # For direct host mapping, you'd use - ./backend/temp_videos:/app/temp_videos
+      # For SQLite DB: - ./backend/chima_videos.db:/app/chima_videos.db
+      - generated_videos:/app/temp_videos
+    working_dir: /app # Set the working directory inside the container
+    networks:
+      - app-network # Connect to our custom network
+    environment:
+      # PYTHONUNBUFFERED: Ensure Python prints logs immediately for better debugging
+      PYTHONUNBUFFERED: 1
+      
+      # Set to 'lm_studio' for local inference (default) or 'openai' for OpenAI API.
+      # When using 'lm_studio', ensure LM Studio is running on your host machine at http://localhost:1234.
+      # For Docker Desktop (Mac/Windows), 'host.docker.internal' allows container to reach host.
+      LLM_PROVIDER: lm_studio
+      LM_STUDIO_URL: http://host.docker.internal:1234 
+    command: uvicorn app:app --host 0.0.0.0 --port 8000 --reload
+
+# Define custom network for communication between services
+networks:
+  app-network:
+    driver: bridge # Default bridge network
+
+# Define named volumes for persistent data
+volumes:
+  generated_videos: # This volume will store the generated video files (temp_videos mapping)
