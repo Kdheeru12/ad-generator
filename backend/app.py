@@ -18,11 +18,13 @@ from video_creator import create_ad_video
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+FRONTEND_ENDPOINT = os.getenv("FRONTEND_ENDPOINT", "http://localhost:3000")
 
+print("FRONTEND_ENDPOINT", FRONTEND_ENDPOINT)
 # --- CORS Configuration ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=[FRONTEND_ENDPOINT],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
