@@ -63,7 +63,7 @@ This is the **recommended** way to run the project. It sets up both frontend and
 
 1.  **Clone the repository:**
     ```bash
-    git clone <your-repository-url>
+    git clone https://github.com/Kdheeru12/ad-generator.git
     cd chima-ad-generator
     ```
     *Ensure your `backend` and `frontend` folders are directly inside `chima_ad_generator` as shown in the project structure above.*
